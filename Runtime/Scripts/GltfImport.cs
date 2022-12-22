@@ -54,6 +54,29 @@ namespace GLTFast {
     using Schema;
     using Loading;
 
+    // description of curve
+    [Serializable]
+    public struct SerializedCurve
+    {
+        public string path;
+        public string property;
+        public AnimationCurve curve;
+
+        public SerializedCurve(string pa, string pr, AnimationCurve cu)
+        {
+            path = pa;
+            property = pr;
+            curve = cu;
+        }
+    }
+
+    [Serializable]
+    public struct SerializedAnimation
+    {
+        public string name;
+        public List<SerializedCurve> curves;
+    }
+
     /// <summary>
     /// Loads a glTF's content, converts it to Unity resources and is able to
     /// feed it to an <cref>IInstantiator</cref> for instantiation.
@@ -231,7 +254,9 @@ namespace GLTFast {
         /// True, when loading has finished and glTF can be instantiated
         /// </summary>
         public bool LoadingDone { get { return loadingDone; } private set { this.loadingDone = value; } }
-        
+
+        public SerializedAnimation[] serializedAnimations;
+
         bool loadingError = false;
         /// <summary>
         /// True if an error happened during glTF loading
@@ -1544,11 +1569,16 @@ namespace GLTFast {
             if (gltfRoot.hasAnimation && settings.animationMethod != ImportSettings.AnimationMethod.None) {
                 
                 animationClips = new AnimationClip[gltfRoot.animations.Length];
+                serializedAnimations = new SerializedAnimation[gltfRoot.animations.Length];
                 for (var i = 0; i < gltfRoot.animations.Length; i++) {
                     var animation = gltfRoot.animations[i];
                     animationClips[i] = new AnimationClip();
                     animationClips[i].name = animation.name ?? $"Clip_{i}";
-                    
+
+                    serializedAnimations[i] = new SerializedAnimation();
+                    serializedAnimations[i].name = animationClips[i].name;
+                    serializedAnimations[i].curves = new List<SerializedCurve>();
+
                     // Legacy Animation requirement
                     animationClips[i].legacy = settings.animationMethod == ImportSettings.AnimationMethod.Legacy;
                     animationClips[i].wrapMode = WrapMode.Loop;
@@ -1572,17 +1602,17 @@ namespace GLTFast {
                         switch (channel.target.pathEnum) {
                             case AnimationChannel.Path.translation: {
                                 var values= ((AccessorNativeData<Vector3>) accessorData[sampler.output]).data;
-                                AnimationUtils.AddTranslationCurves(animationClips[i], path, times, values, sampler.interpolationEnum);
+                                AnimationUtils.AddTranslationCurves(animationClips[i], path, times, values, sampler.interpolationEnum, serializedAnimations[i]);
                                 break;
                             }
                             case AnimationChannel.Path.rotation: {
                                 var values= ((AccessorNativeData<Quaternion>) accessorData[sampler.output]).data;
-                                AnimationUtils.AddRotationCurves(animationClips[i], path, times, values, sampler.interpolationEnum);
+                                AnimationUtils.AddRotationCurves(animationClips[i], path, times, values, sampler.interpolationEnum, serializedAnimations[i]);
                                 break;
                             }
                             case AnimationChannel.Path.scale: {
                                 var values= ((AccessorNativeData<Vector3>) accessorData[sampler.output]).data;
-                                AnimationUtils.AddScaleCurves(animationClips[i], path, times, values, sampler.interpolationEnum);
+                                AnimationUtils.AddScaleCurves(animationClips[i], path, times, values, sampler.interpolationEnum, serializedAnimations[i]);
                                 break;
                             }
                             case AnimationChannel.Path.weights: {

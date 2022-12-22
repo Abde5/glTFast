@@ -72,16 +72,16 @@ namespace GLTFast.Materials {
         static readonly int metallicRoughnessMapUVChannelPropId = Shader.PropertyToID("_MetallicGlossMapUVChannel");
         static readonly int modePropId = Shader.PropertyToID("_Mode");
 
-#if UNITY_EDITOR
+//#if UNITY_EDITOR
         const string SHADER_PATH_PREFIX = "Packages/com.atteneder.gltfast/Runtime/Shader/Built-In/";
         const string SHADER_PATH_PBR_METALLIC_ROUGHNESS = "glTFPbrMetallicRoughness.shader";
         const string SHADER_PATH_PBR_SPECULAR_GLOSSINESS = "glTFPbrSpecularGlossiness.shader";
         const string SHADER_PATH_UNLIT = "glTFUnlit.shader";
-#else
+//#else
         const string SHADER_PBR_METALLIC_ROUGHNESS = "glTF/PbrMetallicRoughness";
         const string SHADER_PBR_SPECULAR_GLOSSINESS = "glTF/PbrSpecularGlossiness";
         const string SHADER_UNLIT = "glTF/Unlit";
-#endif
+//#endif
 
         Shader pbrMetallicRoughnessShader;
         Shader pbrSpecularGlossinessShader;
@@ -94,11 +94,12 @@ namespace GLTFast.Materials {
         }
         
         protected virtual Shader FinderShaderMetallicRoughness() {
-#if UNITY_EDITOR
-            return AssetDatabase.LoadAssetAtPath<Shader>($"{SHADER_PATH_PREFIX}{SHADER_PATH_PBR_METALLIC_ROUGHNESS}");
-#else
+//#if UNITY_EDITOR
+            //Debug.Log($"{SHADER_PATH_PREFIX}{SHADER_PATH_PBR_METALLIC_ROUGHNESS}");
+            //return AssetDatabase.LoadAssetAtPath<Shader>($"{SHADER_PATH_PBR_METALLIC_ROUGHNESS}");
+//#else
             return FindShader(SHADER_PBR_METALLIC_ROUGHNESS);
-#endif
+//#endif
         }
         
         protected virtual Shader FinderShaderSpecularGlossiness() {

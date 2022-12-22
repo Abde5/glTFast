@@ -23,6 +23,7 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Profiling;
+using static GLTFast.SerializedCurve;
 
 namespace GLTFast {
 
@@ -30,19 +31,19 @@ namespace GLTFast {
 
         const float k_TimeEpsilon = 0.00001f;
 
-        public static void AddTranslationCurves(AnimationClip clip, string animationPath, NativeArray<float> times, NativeArray<Vector3> translations, InterpolationType interpolationType) {
+        public static void AddTranslationCurves(AnimationClip clip, string animationPath, NativeArray<float> times, NativeArray<Vector3> translations, InterpolationType interpolationType, SerializedAnimation sAnim) {
             // TODO: Refactor interface to use Unity.Mathematics types and remove this Reinterpret
             var values = translations.Reinterpret<float3>();
-            AddVec3Curves(clip, animationPath, "localPosition.", times, values, interpolationType);
+            AddVec3Curves(clip, animationPath, "localPosition.", times, values, interpolationType, sAnim);
         }
 
-        public static void AddScaleCurves(AnimationClip clip, string animationPath, NativeArray<float> times, NativeArray<Vector3> translations, InterpolationType interpolationType) {
+        public static void AddScaleCurves(AnimationClip clip, string animationPath, NativeArray<float> times, NativeArray<Vector3> translations, InterpolationType interpolationType, SerializedAnimation sAnim) {
             // TODO: Refactor interface to use Unity.Mathematics types and remove this Reinterpret
             var values = translations.Reinterpret<float3>();
-            AddVec3Curves(clip, animationPath, "localScale.", times, values, interpolationType);
+            AddVec3Curves(clip, animationPath, "localScale.", times, values, interpolationType, sAnim);
         }
 
-        public static void AddRotationCurves(AnimationClip clip, string animationPath, NativeArray<float> times, NativeArray<Quaternion> quaternions, InterpolationType interpolationType) {
+        public static void AddRotationCurves(AnimationClip clip, string animationPath, NativeArray<float> times, NativeArray<Quaternion> quaternions, InterpolationType interpolationType, SerializedAnimation sAnim) {
             Profiler.BeginSample("AnimationUtils.AddRotationCurves");
             var rotX = new AnimationCurve();
             var rotY = new AnimationCurve();
@@ -52,9 +53,6 @@ namespace GLTFast {
             // TODO: Refactor interface to use Unity.Mathematics types and remove this Reinterpret
             var values = quaternions.Reinterpret<quaternion>();
 
-#if DEBUG
-            uint duplicates = 0;
-#endif
             
             switch (interpolationType) {
                 case InterpolationType.STEP: {
@@ -93,9 +91,6 @@ namespace GLTFast {
                         if (prevTime >= time) {
                             // Time value is not increasing, so we ignore this keyframe
                             // This happened on some Sketchfab files (see #298)
-#if DEBUG
-                            duplicates++;
-#endif
                             continue;
                         }
                         
@@ -136,16 +131,15 @@ namespace GLTFast {
             }
             
             clip.SetCurve(animationPath, typeof(Transform), "localRotation.x", rotX);
+            sAnim.curves.Add(new SerializedCurve(animationPath,"localRotation.x",rotX));
             clip.SetCurve(animationPath, typeof(Transform), "localRotation.y", rotY);
+            sAnim.curves.Add(new SerializedCurve(animationPath, "localRotation.y", rotY));
             clip.SetCurve(animationPath, typeof(Transform), "localRotation.z", rotZ);
+            sAnim.curves.Add(new SerializedCurve(animationPath, "localRotation.z", rotZ));
             clip.SetCurve(animationPath, typeof(Transform), "localRotation.w", rotW);
-            Profiler.EndSample();
+            sAnim.curves.Add(new SerializedCurve(animationPath, "localRotation.w", rotW));
 
-#if DEBUG
-            if (duplicates > 0) {
-                ReportDuplicateKeyframes();
-            }
-#endif
+            Profiler.EndSample();
         }
 
         public static string CreateAnimationPath(int nodeIndex, string[] nodeNames, int[] parentIndex) {
@@ -200,7 +194,7 @@ namespace GLTFast {
             Profiler.EndSample();
         }
 
-        static void AddVec3Curves(AnimationClip clip, string animationPath, string propertyPrefix, NativeArray<float> times, NativeArray<float3> values, InterpolationType interpolationType) {
+        static void AddVec3Curves(AnimationClip clip, string animationPath, string propertyPrefix, NativeArray<float> times, NativeArray<float3> values, InterpolationType interpolationType, SerializedAnimation sAnim) {
             Profiler.BeginSample("AnimationUtils.AddVec3Curves");
             var curveX = new AnimationCurve();
             var curveY = new AnimationCurve();
@@ -280,8 +274,11 @@ namespace GLTFast {
             }
 
             clip.SetCurve(animationPath, typeof(Transform), $"{propertyPrefix}x", curveX);
+            sAnim.curves.Add(new SerializedCurve(animationPath, $"{propertyPrefix}x", curveX));
             clip.SetCurve(animationPath, typeof(Transform), $"{propertyPrefix}y", curveY);
+            sAnim.curves.Add(new SerializedCurve(animationPath, $"{propertyPrefix}y", curveY));
             clip.SetCurve(animationPath, typeof(Transform), $"{propertyPrefix}z", curveZ);
+            sAnim.curves.Add(new SerializedCurve(animationPath, $"{propertyPrefix}z", curveZ));
             Profiler.EndSample();
 #if DEBUG
             if (duplicates > 0) {
