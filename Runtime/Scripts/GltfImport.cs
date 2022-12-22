@@ -58,8 +58,11 @@ namespace GLTFast {
     [Serializable]
     public struct SerializedCurve
     {
+        [Serializable]
         public string path;
+        [Serializable]
         public string property;
+        [Serializable]
         public AnimationCurve curve;
 
         public SerializedCurve(string pa, string pr, AnimationCurve cu)
@@ -73,7 +76,9 @@ namespace GLTFast {
     [Serializable]
     public struct SerializedAnimation
     {
+        [Serializable]
         public string name;
+        [Serializable]
         public List<SerializedCurve> curves;
     }
 
